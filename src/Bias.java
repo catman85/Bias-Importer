@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+//requires some .jar files (commons.io) to be added
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
@@ -22,35 +23,27 @@ public class Bias {
 	private static String presetName;
 	private static String uuid;
 	
-	
-	// directories like /(solaris) or \\windows
-	//static String PRsource = "C:/Users/Jim/Documents/BIAS_FX/Presets/B606D598-14C7-EB98-AC80-77A1F114935F/CHUGG.Preset";
-	//static String PRdest = "C:/Users/Jim/Desktop/CHUGG.Preset";
     static String cate;
     static String preset;
     static String dest;
     static String source;
-    //static String presetBFfile = "C:/Users/Jim/Desktop/preset.json";
-    //static String type="";
-	/*public static void main(String[] args) {
-			//insertionBiasAmp();
-			//System.out.println(getBiasFxPrName(PRdest));
-	}*/
+
 	public Bias(String s,String d,String t){
 		
 		if(t=="BiasAmp"){
 			source=s;
-			//checkIfExists(source);
+			checkIfExists(source);
 			
 			cate=d+"\\cate.idx";
-			//checkIfExists(cate);
+			checkIfExists(cate);
 			
 			dest=d+"\\GlobalPresets\\";
 			checkIfExists(dest);
 			dest=d+"\\GlobalPresets\\"+getBiasAmpUuid(s);
-			//System.out.printf("%s\n%s\n%s\n%s\n",source,cate,dest,t);
 			
+			//inserts code in cate.idx
 			insertBiasAmp();
+			//copies the Amp Model to GlobalPresets
 			copyDir();
 		}else if(t=="BiasFx"){
 			source=s;
@@ -61,11 +54,11 @@ public class Bias {
 			
 			dest=d+"\\Presets\\factory\\";
 			checkIfExists(dest);
-			
 			dest=d+"\\Presets\\factory\\"+getBiasFxPrName(s)+".Preset";
-			//System.out.printf("%s\n%s\n%s\n%s\n",source,preset,dest,t);
 			
+			//inserts code in \Presets\factory\preset.json  
 			insertBiasFx();
+			//copies the ".Preset" file in \Presets\factory\
 			copyFile();
 		}else{
 			System.exit(0);
@@ -78,26 +71,24 @@ public class Bias {
             //finding display order
             try {
     			disOrder=findDisOrder(preset); 
+    			disOrder++; 
     		} catch (IOException e) {
     			e.printStackTrace();
     		}
             
             File presetBFfileDir=new File(preset);
             
-        	disOrder++; 
-        	//System.out.printf("%d\n",disOrder);
-        	
+            //Randomly generating a UUID for the Bias FX patch
         	uuid=getBiasFxUuid();
-        	//System.out.printf("%s\n",uuid);
         	
+        	//generating the code to insert inside the preset.JSON file
         	String string=getBiasFxCode();
-        	//System.out.printf("%s %d\n",string,presetBFfileDir.length());
-        	
         	
         	byte[] b = string.getBytes(StandardCharsets.UTF_8); // Java 7+ only
         	insert(preset,presetBFfileDir.length()-8,b); //8 for Bias FX 
         	
         } catch (IOException e) {
+        	View.error();
             e.printStackTrace();
         }
 	}
@@ -107,37 +98,34 @@ public class Bias {
             //finding display order
             try {
     			disOrder=findDisOrder(cate); 
+    			disOrder++;//adding +1 for the new preset
     		} catch (IOException e) {
     			e.printStackTrace();
     		}
             
             File cateDir=new File(cate);
             
-        	disOrder++; 
-        	//System.out.printf("%d\n",disOrder);
-        	
+        	//getting the UUID of the Bias Amp Model
         	uuid=getBiasAmpUuid(dest);
-        	//System.out.printf("%s\n",uuid);
         	
+        	//generating the required code we need to insert inside cate.idx
         	String string=getBiasAmpCode();
-        	//System.out.printf("%s %d\n",string,cateDir.length());
-        	
         	
         	byte[] b = string.getBytes(StandardCharsets.UTF_8); // Java 7+ only
         	insert(cate,cateDir.length()-50,b); //50 for Bias Amp 
         	
         } catch (IOException e) {
+        	View.error();
             e.printStackTrace();
         }
 	}
 	
-	
+	//copies the Bias Amp folder to GlobalPresets
 	private static void copyDir(){
 		File s=new File(source);
 		File d=new File(dest);
 		
         //Copying an existing directory!
-
         // The destination directory to copy to. This directory
         // doesn't exists and will be created during the copy
         // directory process.
@@ -150,28 +138,29 @@ public class Bias {
             // date information of the file.
             //
         	
-        	//Check if already exists and delete it
         	Path pathD=Paths.get(dest);
         	if(Files.exists(pathD)){
-        		//System.out.println("Replaced");
+        		//If the file already exists we replace it with a new one.
         		d.delete();
         	}
             FileUtils.copyDirectory(s, d);
         	
         } catch (IOException e) {
+        	View.error();
             e.printStackTrace();
         }
 		
 	}
 	
+	//copies the .Preset file
 	private static void copyFile(){
 		File s=new File(source);
 		File d=new File(dest);
 		
 		try {
-			//copyFileUsingJava7Files(s, d);
 			Files.copy(s.toPath(), d.toPath(),StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
+			View.error();
 			e.printStackTrace();
 		}
 		
@@ -239,7 +228,7 @@ public class Bias {
     	return s;	
     }
     private static String getBiasFxUuid(){
-    	//8HEX-4HEX-4HEX-4HEX-12HEX
+    	//format: 8HEX-4HEX-4HEX-4HEX-12HEX
     	String id = UUID.randomUUID().toString();
     	return id.toUpperCase();
     } 
@@ -247,16 +236,13 @@ public class Bias {
     	presetName=dir.substring(dir.lastIndexOf('\\')+1,dir.length()-7);
     	return dir.substring(dir.lastIndexOf('\\')+1,dir.length()-7);	
     }
-    
     private static void checkIfExists(String f){
     	try {
 			Path pathS=Paths.get(f);
 			if(Files.notExists(pathS)){
-				//System.err.println("File doesn't exist!");
 				View.error();
 			}
 		} catch (InvalidPathException e) {
-			// TODO Auto-generated catch block
 			View.error();
 			e.printStackTrace();
 		}

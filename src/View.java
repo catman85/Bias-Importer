@@ -1,11 +1,15 @@
 
+import java.awt.Component;
 import java.awt.EventQueue;
+import java.awt.HeadlessException;
+import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JRadioButton;
@@ -14,6 +18,7 @@ import javax.swing.UIManager;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+
 import java.awt.Toolkit;
 
 public class View extends JFrame {
@@ -23,7 +28,7 @@ public class View extends JFrame {
 	private static JTextField txtPresetDirectory;
 	private static JTextField txtBiasFolder;
 	private static JFileChooser chooser;
-	private final ButtonGroup buttonGroup = new ButtonGroup();
+	private final  ButtonGroup buttonGroup = new ButtonGroup();
 	private static JRadioButton rdbtnBiasFx;
 	private static JRadioButton rdbtnBiasAmp;
 	private static JLabel lblPreset;
@@ -31,6 +36,7 @@ public class View extends JFrame {
 	private static JButton btnImport;
 	private static JButton btnTopFileChooser;
 	private static JButton btnBottomFileChooser;
+	private static View frame;
 	/**
 	 * Launch the application.
 	 */
@@ -45,9 +51,10 @@ public class View extends JFrame {
 		EventQueue.invokeLater(new Runnable(){
 			public void run() {
 				try {
-					View frame = new View();
+					frame = new View();
 					frame.setVisible(true);
 				} catch (Exception e) {
+					View.error();
 					e.printStackTrace();
 				}
 			}
@@ -55,7 +62,7 @@ public class View extends JFrame {
 	}
 
 	/**
-	 * Create the frame.
+	 * Create the frame. Runs when a View object is made.
 	 */
 	public View(){
 		setIconImage(Toolkit.getDefaultToolkit().getImage(View.class.getResource("/resourcesimg/6ed0796d5879146f7f4db90d21d6f494.png")));
@@ -64,44 +71,43 @@ public class View extends JFrame {
 		handleEvents();
 	}
 	
-	private static void popFileChooser(String type){
+	
+	private static int popFileChooser(String type){
 		
 		try {
 			chooser.setCurrentDirectory(new java.io.File("."));
-			chooser.setDialogTitle("Select one Patch");
 			if(type=="pickfile"){
-				chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+				chooser.setDialogTitle("Select File");
+				chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);//.Preset
 			}else if(type=="pickfolder"){
-				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				chooser.setDialogTitle("Select Folder");
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);//Bias Amp folder
 			}else{
+				chooser.setDialogTitle("Select...");
 				chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES );
 			}
 			//
 			// disable the "All files" option.
 			//
 			chooser.setAcceptAllFileFilterUsed(false);
+			  
 			
-			//    
-			if (chooser.showOpenDialog(chooser) == JFileChooser.APPROVE_OPTION) { 
-			 /* System.out.println("getCurrentDirectory(): " 
-			     +  chooser.getCurrentDirectory());
-			  System.out.println("getSelectedFile() : " 
-			     +  chooser.getSelectedFile());*/
-			  }
-			else {
-			  //System.out.println("No Selection ");
-			  //handle that
+			if(chooser.showOpenDialog(chooser) == JFileChooser.APPROVE_OPTION) { 
+			  chooser.getCurrentDirectory();
+			  chooser.getSelectedFile();
+			  return 0;
+			}else {
+			  //No selection 
+			  //the cancel button was hit
+			  return 1;
 			}
 		} catch (NullPointerException e) {
-			// TODO Auto-generated catch block
+			View.error();
 			e.printStackTrace();
 		}
+		return 1;
 	}
 	
-	/**/
-	
-	
-
 	private void initComponents() {
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -147,7 +153,16 @@ public class View extends JFrame {
 		btnImport.setBounds(220, 161, 97, 25);
 		contentPane.add(btnImport);
 		
-		chooser = new JFileChooser();
+		chooser = new JFileChooser(){
+			private static final long serialVersionUID = 1L;
+			//setting the icon image of JFileChooser
+			protected JDialog createDialog( Component parent ) throws HeadlessException {
+	        	JDialog dialog = super.createDialog( parent );
+	        	Image image = Toolkit.getDefaultToolkit().getImage(View.class.getResource("/resourcesimg/6ed0796d5879146f7f4db90d21d6f494.png"));
+	        	dialog.setIconImage( image );
+	        	return dialog;
+	    	}
+		};
 		
 		btnTopFileChooser = new JButton("...");
 		btnTopFileChooser.setBounds(488, 55, 44, 25);
@@ -181,29 +196,34 @@ public class View extends JFrame {
 		btnTopFileChooser.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent arg0) throws NullPointerException{
-				
+				int b;
 				try {
 					if(rdbtnBiasFx.isSelected()){
-						popFileChooser("pickfile");
+						b=popFileChooser("pickfile");
 					}else if(rdbtnBiasAmp.isSelected()){
-						popFileChooser("pickfolder");
+						b=popFileChooser("pickfolder");
 					}else{
-						popFileChooser("");
+						b=popFileChooser("");
 					}
-					txtPresetDirectory.setText(chooser.getSelectedFile().getAbsolutePath());
-				} catch (NullPointerException e) {
+					if(b==0){
+						txtPresetDirectory.setText(chooser.getSelectedFile().getAbsolutePath());
+					}
+				} catch (NullPointerException e){
+					View.error();
 					e.printStackTrace();
 				}
-				
 			}
 		});
 		btnBottomFileChooser.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent arg0) {
 				try {
-					popFileChooser("pickfolder");
-					txtBiasFolder.setText(chooser.getSelectedFile().getAbsolutePath());
+					int b=popFileChooser("pickfolder");
+					if(b==0){
+						txtBiasFolder.setText(chooser.getSelectedFile().getAbsolutePath());
+					}
 				} catch (NullPointerException e) {
+					View.error();
 					e.printStackTrace();
 				}
 			}
@@ -217,17 +237,18 @@ public class View extends JFrame {
 				if(rdbtnBiasFx.isSelected()){
 					type="BiasFx";
 				}
-				//Hops on Bias source code
+				//Hops on Bias.java and runs constructor.
 				new Bias(txtPresetDirectory.getText(),txtBiasFolder.getText(),type);
-				//after the constructor runs successfully
 			}
 		});
 	}
 	
+	//The end
 	public static void success(){
 		JOptionPane.showMessageDialog(new View(), "Success!");
 		System.exit(0);
 	}
+	//THALL
 	public static void error(){
 		JOptionPane.showMessageDialog(new View(), "Error!");
 		System.exit(1);
