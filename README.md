@@ -3,7 +3,7 @@
 
 ## _A Java application that allows you to import Presets to Bias FX and Bias Amp offline_.
 
-Simply run "Bias Importer.exe" and follow the instructions. Now you can privately send presets to your friends without using the ToneCloud! (Requires a Java Runtime Enviroment)
+Now you can privately send presets to your friends without using the ToneCloud! (Requires a Java Runtime Enviroment)
 
 
 ![final.PNG](pics/final.PNG)
