@@ -17,6 +17,8 @@ After Importing your preset, open up Bias Amp and look in the "Custom" bank.
 
 If you own Bias Amp or Bias FX and you are a Mac user, it would be cool if we made a Mac version of this.
 
+To run this app, you need to import the commons.io.jar library in your project.
+
 
 ![pic.PNG](pics/pic.PNG)
 
